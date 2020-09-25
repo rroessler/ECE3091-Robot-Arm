@@ -1,5 +1,5 @@
 /*
-*   Lab 2 - II.2
+*   Lab 2 - II.3
 *
 *
 */
@@ -11,9 +11,9 @@ float jointAngles[4];
 float endEffectorPos[3];
 
 // setting constant variables needed
-const float armLengths[4] = {6, 8, 8, 6};    // setting constant robot arm lengths between joints
+const float armLengths[4] = {6, 8, 8, 6};      // setting constant robot arm lengths between joints
 const float angleOffsets[4] = {0, 0, 180, 30}; // angle offset constants for joint angle calculations
-const int debug = true;                      // debug boolean for serial monitor display
+const int debug = true;                        // debug boolean for serial monitor display
 
 // setting up PIN constants
 const int basePIN = 6;
@@ -30,7 +30,6 @@ VarSpeedServo gripperServo;
 // default speeds for servos as indexed
 int defaultSpeed[4] = {30, 30, 30, 30};
 
-
 /*
 *   FUNCTION:
 *       Moves the servos to current joint angles given by jointAngles[]. Does
@@ -42,7 +41,7 @@ int defaultSpeed[4] = {30, 30, 30, 30};
 *   OUPUT:
 *       nil.
 */
-void change_servoPos(int servoSpeed[4] = defaultSpeed)
+void change_servoPos(int servoSpeed[4] = defaultSpeed, bool waitForFinish = true)
 {
     // iterate over each global joint angle
     for (int i = 0; i < sizeof(jointAngles) / sizeof(jointAngles[0]); i++)
@@ -66,12 +65,14 @@ void change_servoPos(int servoSpeed[4] = defaultSpeed)
     }
 
     // make program wait for servos to finish
-    baseServo.wait();
-    armServo.wait();
-    wristServo.wait();
-    gripperServo.wait();
+    if (waitForFinish)
+    {
+        baseServo.wait();
+        armServo.wait();
+        wristServo.wait();
+        gripperServo.wait();
+    }
 }
-
 
 /*
 *   FUNCTION:
@@ -88,6 +89,10 @@ void change_servoPos(int servoSpeed[4] = defaultSpeed)
 */
 void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = defaultSpeed)
 {
+    jointAngles[0] = nextAngle[0];
+    jointAngles[1] = nextAngle[1];
+    jointAngles[2] = nextAngle[2];
+
     // determine next position
     if (disp)
         Serial.println("-- Calculating Next Position --");
@@ -102,7 +107,10 @@ void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = de
 
     // and print current angles
     if (disp)
+    {
         print_currentAngles();
+        Serial.println();
+    }
 }
 
 /*
@@ -119,18 +127,66 @@ void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = de
 *   OUTPUT:
 *       nil.
 */
-void move_toPos(float nextPos[], bool disp = debug, int servoSpeed[4] = defaultSpeed) {
+void move_toPos(float nextPos[], bool waitForFinish = true, bool disp = debug, int servoSpeed[4] = defaultSpeed)
+{
+    endEffectorPos[0] = nextPos[0];
+    endEffectorPos[1] = nextPos[1];
+    endEffectorPos[2] = nextPos[2];
+
     // determine next position joint angles
-    if (debug) Serial.println("-- Calculating Next Position --");
+    if (debug)
+        Serial.println("-- Calculating Next Position --");
     calc_IK(endEffectorPos);
-    if (debug) print_currentAngles();
+    if (debug)
+        print_currentAngles();
 
     // and move to the next position with given speeds
-    if (debug) Serial.println("-- Moving to Next Position --");
-    change_servoPos(servoSpeed);
+    if (debug)
+        Serial.println("-- Moving to Next Position --");
+    change_servoPos(servoSpeed, waitForFinish);
 
     // and print current position
-    if (debug) print_currentPos();
+    if (debug)
+    {
+        print_currentPos();
+        Serial.println();
+    }
+}
+
+void move_toPos_stepped(float startPos[], float endPos[], int stepSize)
+{
+    if (stepSize == 0)
+    {
+        // step size of zero implies go straight to end position
+        move_toPos(endPos);
+        return;
+    }
+
+    // determine direction between start and end position
+    float dir[3];
+    dir[0] = endPos[0] - startPos[0];
+    dir[1] = endPos[1] - startPos[1];
+    dir[2] = endPos[2] - startPos[2];
+
+    // normalize the direction vector
+    float magnitude = sqrt(sq(dir[0]) + sq(dir[1]) + sq(dir[2]));
+    dir[0] = dir[0] / magnitude;
+    dir[1] = dir[1] / magnitude;
+    dir[2] = dir[2] / magnitude;
+
+    float nextPoint[3];
+    int servoSpeed[4] = {75, 75, 75, 75};
+
+    // iterate over a loop from 0 to stepSize - 1 and move to chosen points
+    for (int i = 0; i < stepSize; i++)
+    {
+        // determine next point
+        nextPoint[0] = startPos[0] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[0];
+        nextPoint[1] = startPos[1] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[1];
+        nextPoint[2] = startPos[2] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[2];
+
+        move_toPos(nextPoint, false, true, servoSpeed);
+    }
 }
 
 // initialization of Arduino program
@@ -140,10 +196,10 @@ void setup()
     Serial.begin(9600);
 
     // initialise end effector and joint joint angles
-    jointAngles[0] = 90;  // base rotation
-    jointAngles[1] = 90;  // arm rotation
-    jointAngles[2] = 0; // wrist rotation
-    jointAngles[3] = 0;   // gripper rotation
+    jointAngles[0] = 90; // base rotation
+    jointAngles[1] = 90; // arm rotation
+    jointAngles[2] = 0;  // wrist rotation
+    jointAngles[3] = 0;  // gripper rotation
 
     // attaching Arduino PINs and Servo Pins
     baseServo.attach(basePIN);
@@ -168,27 +224,92 @@ void setup()
 // Arduino main loop program
 void loop()
 {
-    // read input initially
-    Serial.println("-- Please enter x, y, z Coordinates --");
-    while (!Serial.available()) {}
-    endEffectorPos[0] = Serial.parseFloat();
+    Serial.println("--- Please enter a Path to Follow/Draw ---");
+    Serial.println("=> Straight Line (type \"0\")");
+    Serial.println("=> Square (type \"1\")");
+    Serial.println("=> Arc (type \"2\")");
+    Serial.println();
+    while (!Serial.available())
+    {
+    }
+    int path = Serial.parseInt();
+
+    switch (path)
+    {
+    case 0:
+        follow_line();
+        break;
+    default:
+        Serial.println("You did not choose a valid Path!");
+        Serial.println();
+        break;
+    }
+}
+
+void follow_line()
+{
+    // set up start and end points
+    float pointStart[3];
+    float pointEnd[3];
+    int stepSize;
+
+    // save points as given
+    Serial.println("--- Please enter a starting x, y, z coordinate ---");
+    record_point(pointStart);
+    Serial.println("--- Please enter an ending x, y, z coordinate ---");
+    record_point(pointEnd);
+
+    // specify a step size for => needed as otherwise arm travels with curvature between points
+    Serial.println("--- Please enter a number of steps (more == straighter line, 0 == direct path) ---");
+    while (!Serial.available())
+    {
+    }
+    stepSize = Serial.parseInt();
+    Serial.print("Step Size: ");
+    Serial.println(stepSize);
+    Serial.println();
+
+    delay(300);
+
+    // initialise arm starting point
+    Serial.println("--- Moving to start point ---");
+    move_toPos(pointStart);
+
+    // move arm from one point to another via steps
+    delay(500);
+    Serial.println("--- Moving along path desired! ---");
+    Serial.println();
+
+    move_toPos_stepped(pointStart, pointEnd, stepSize);
+
+    Serial.println("--- Finished following path! ---");
+    Serial.println();
+    delay(500);
+}
+
+void record_point(float point[])
+{
+    while (!Serial.available())
+    {
+    }
+    point[0] = Serial.parseFloat();
     Serial.print("x: ");
-    Serial.println(endEffectorPos[0]);
+    Serial.println(point[0]);
     delay(100);
-    while (!Serial.available()) {}
-    endEffectorPos[1] = Serial.parseFloat();
+    while (!Serial.available())
+    {
+    }
+    point[1] = Serial.parseFloat();
     Serial.print("y: ");
-    Serial.println(endEffectorPos[1]);
+    Serial.println(point[1]);
     delay(100);
-    while (!Serial.available()) {}
-    endEffectorPos[2] = Serial.parseFloat();
+    while (!Serial.available())
+    {
+    }
+    point[2] = Serial.parseFloat();
     Serial.print("z: ");
-    Serial.println(endEffectorPos[2]);
-
-    // move to chosen location
-    move_toPos(endEffectorPos);
-
-    delay(1000);
+    Serial.println(point[2]);
+    Serial.println();
 }
 
 /*
@@ -271,8 +392,9 @@ void calc_IK(float endEffectorPos[])
     float r3 = sqrt(sq(r1) + sq(r2));
 
     jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG;
-    jointAngles[1] = 180 - (atan2(r2, r1) + acos((sq(armLengths[1]) + sq(r1) + sq(r2) - sq(armLengths[2]))/(2 * armLengths[1] * r3))) * RAD_TO_DEG;
+    jointAngles[1] = 180 - (atan2(r2, r1) + acos((sq(armLengths[1]) + sq(r1) + sq(r2) - sq(armLengths[2])) / (2 * armLengths[1] * r3))) * RAD_TO_DEG;
     jointAngles[2] = -(90 - acos((sq(armLengths[1]) + sq(armLengths[2]) - sq(r1) - sq(r2)) / (2 * armLengths[1] * armLengths[2])) * RAD_TO_DEG);
 
-    if (jointAngles[2] + angleOffsets[2] > 180) jointAngles[2] = 0;
+    if (jointAngles[2] + angleOffsets[2] > 180)
+        jointAngles[2] = 0;
 }

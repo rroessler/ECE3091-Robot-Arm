@@ -1,5 +1,5 @@
 /*
-*   Lab 2 - II.1
+*   Lab 2 - II.2
 *
 *
 */
@@ -12,7 +12,7 @@ float endEffectorPos[3];
 
 // setting constant variables needed
 const float armLengths[4] = {6, 8, 8, 6};    // setting constant robot arm lengths between joints
-const float angleOffsets[4] = {0, 0, 0, 30}; // angle offset constants for joint angle calculations
+const float angleOffsets[4] = {0, 0, 180, 30}; // angle offset constants for joint angle calculations
 const int debug = true;                      // debug boolean for serial monitor display
 
 // setting up PIN constants
@@ -51,16 +51,16 @@ void change_servoPos(int servoSpeed[4] = defaultSpeed)
         switch (i)
         {
         case 0:
-            baseServo.write(jointAngles[i], servoSpeed[i]);
+            baseServo.write(jointAngles[i] + angleOffsets[0], servoSpeed[i]);
             break;
         case 1:
-            armServo.write(jointAngles[i], servoSpeed[i]);
+            armServo.write(jointAngles[i] + angleOffsets[1], servoSpeed[i]);
             break;
         case 2:
-            wristServo.write(jointAngles[i], servoSpeed[i]);
+            wristServo.write(jointAngles[i] + angleOffsets[2], servoSpeed[i]);
             break;
         case 3:
-            gripperServo.write(jointAngles[i], servoSpeed[i]);
+            gripperServo.write(jointAngles[i] + angleOffsets[3], servoSpeed[i]);
             break;
         }
     }
@@ -140,10 +140,10 @@ void setup()
     Serial.begin(9600);
 
     // initialise end effector and joint joint angles
-    jointAngles[0] = 90 + angleOffsets[0];  // base rotation
-    jointAngles[1] = 90 + angleOffsets[1];  // arm rotation
-    jointAngles[2] = 180 + angleOffsets[2]; // wrist rotation
-    jointAngles[3] = 0 + angleOffsets[3];   // gripper rotation
+    jointAngles[0] = 90;  // base rotation
+    jointAngles[1] = 90;  // arm rotation
+    jointAngles[2] = 0; // wrist rotation
+    jointAngles[3] = 0;   // gripper rotation
 
     // attaching Arduino PINs and Servo Pins
     baseServo.attach(basePIN);
@@ -183,7 +183,7 @@ void loop()
     while (!Serial.available()) {}
     endEffectorPos[2] = Serial.parseFloat();
     Serial.print("z: ");
-    Serial.println(jendEffectorPos[2]);
+    Serial.println(endEffectorPos[2]);
 
     // move to chosen location
     move_toPos(endEffectorPos);
@@ -226,11 +226,11 @@ void print_currentAngles()
 {
     Serial.println("-- Current Angles --");
     Serial.print("Base: ");
-    Serial.println(jointAngles[0], 3);
+    Serial.println(jointAngles[0] + angleOffsets[0], 3);
     Serial.print("Arm: ");
-    Serial.println(jointAngles[1], 3);
+    Serial.println(jointAngles[1] + angleOffsets[1], 3);
     Serial.print("Wrist: ");
-    Serial.println(jointAngles[2], 3);
+    Serial.println(jointAngles[2] + angleOffsets[2], 3);
 }
 
 /*
@@ -270,7 +270,9 @@ void calc_IK(float endEffectorPos[])
     float r2 = endEffectorPos[2] - armLengths[0];
     float r3 = sqrt(sq(r1) + sq(r2));
 
-    jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG + angleOffsets[0];
-    jointAngles[1] = (atan2(r2, r1) - acos((sq(armLengths[2]) - sq(armLengths[1]) - sq(r3)) / (-2 * armLengths[1] * r3))) * RAD_TO_DEG + angleOffsets[1];
-    jointAngles[2] = (M_PI - acos((sq(r3) - sq(armLengths[1]) - sq(armLengths[2])) / (-2 * armLengths[1] * armLengths[2]))) * RAD_TO_DEG + angleOffsets[2];
+    jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG;
+    jointAngles[1] = 180 - (atan2(r2, r1) + acos((sq(armLengths[1]) + sq(r1) + sq(r2) - sq(armLengths[2]))/(2 * armLengths[1] * r3))) * RAD_TO_DEG;
+    jointAngles[2] = -(90 - acos((sq(armLengths[1]) + sq(armLengths[2]) - sq(r1) - sq(r2)) / (2 * armLengths[1] * armLengths[2])) * RAD_TO_DEG);
+
+    if (jointAngles[2] + angleOffsets[2] > 180) jointAngles[2] = 0;
 }
