@@ -11,9 +11,9 @@ float jointAngles[4];
 float endEffectorPos[3];
 
 // setting constant variables needed
-const float armLengths[4] = {6, 8, 8, 6};      // setting constant robot arm lengths between joints
+const float armLengths[4] = {6, 8, 8, 6};    // setting constant robot arm lengths between joints
 const float angleOffsets[4] = {0, 0, 180, 30}; // angle offset constants for joint angle calculations
-const int debug = true;                        // debug boolean for serial monitor display
+const int debug = true;                      // debug boolean for serial monitor display
 
 // setting up PIN constants
 const int basePIN = 6;
@@ -29,6 +29,7 @@ VarSpeedServo gripperServo;
 
 // default speeds for servos as indexed
 int defaultSpeed[4] = {30, 30, 30, 30};
+
 
 /*
 *   FUNCTION:
@@ -65,14 +66,14 @@ void change_servoPos(int servoSpeed[4] = defaultSpeed, bool waitForFinish = true
     }
 
     // make program wait for servos to finish
-    if (waitForFinish)
-    {
+    if (waitForFinish) {
         baseServo.wait();
         armServo.wait();
         wristServo.wait();
         gripperServo.wait();
     }
 }
+
 
 /*
 *   FUNCTION:
@@ -89,10 +90,6 @@ void change_servoPos(int servoSpeed[4] = defaultSpeed, bool waitForFinish = true
 */
 void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = defaultSpeed)
 {
-    jointAngles[0] = nextAngle[0];
-    jointAngles[1] = nextAngle[1];
-    jointAngles[2] = nextAngle[2];
-
     // determine next position
     if (disp)
         Serial.println("-- Calculating Next Position --");
@@ -107,10 +104,7 @@ void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = de
 
     // and print current angles
     if (disp)
-    {
         print_currentAngles();
-        Serial.println();
-    }
 }
 
 /*
@@ -127,41 +121,31 @@ void move_toAngles(float nextAngles[], bool disp = debug, int servoSpeed[4] = de
 *   OUTPUT:
 *       nil.
 */
-void move_toPos(float nextPos[], bool waitForFinish = true, bool disp = debug, int servoSpeed[4] = defaultSpeed)
-{
+void move_toPos(float nextPos[], bool waitForFinish = true, bool disp = debug, int servoSpeed[4] = defaultSpeed) {
     endEffectorPos[0] = nextPos[0];
     endEffectorPos[1] = nextPos[1];
     endEffectorPos[2] = nextPos[2];
-
+    
     // determine next position joint angles
-    if (debug)
-        Serial.println("-- Calculating Next Position --");
+    if (debug) Serial.println("-- Calculating Next Position --");
     calc_IK(endEffectorPos);
-    if (debug)
-        print_currentAngles();
+    if (debug) print_currentAngles();
 
     // and move to the next position with given speeds
-    if (debug)
-        Serial.println("-- Moving to Next Position --");
+    if (debug) Serial.println("-- Moving to Next Position --");
     change_servoPos(servoSpeed, waitForFinish);
 
     // and print current position
-    if (debug)
-    {
-        print_currentPos();
-        Serial.println();
-    }
+    if (debug) print_currentPos();
 }
 
-void move_toPos_stepped(float startPos[], float endPos[], int stepSize)
-{
-    if (stepSize == 0)
-    {
+void move_toPos_stepped(float startPos[], float endPos[], int stepSize) {
+    if (stepSize == 0) {
         // step size of zero implies go straight to end position
         move_toPos(endPos);
         return;
     }
-
+    
     // determine direction between start and end position
     float dir[3];
     dir[0] = endPos[0] - startPos[0];
@@ -178,13 +162,12 @@ void move_toPos_stepped(float startPos[], float endPos[], int stepSize)
     int servoSpeed[4] = {75, 75, 75, 75};
 
     // iterate over a loop from 0 to stepSize - 1 and move to chosen points
-    for (int i = 0; i < stepSize; i++)
-    {
+    for (int i = 0; i < stepSize; i++) {
         // determine next point
         nextPoint[0] = startPos[0] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[0];
         nextPoint[1] = startPos[1] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[1];
         nextPoint[2] = startPos[2] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[2];
-
+        
         move_toPos(nextPoint, false, true, servoSpeed);
     }
 }
@@ -196,10 +179,10 @@ void setup()
     Serial.begin(9600);
 
     // initialise end effector and joint joint angles
-    jointAngles[0] = 90; // base rotation
-    jointAngles[1] = 90; // arm rotation
-    jointAngles[2] = 0;  // wrist rotation
-    jointAngles[3] = 0;  // gripper rotation
+    jointAngles[0] = 90;  // base rotation
+    jointAngles[1] = 90;  // arm rotation
+    jointAngles[2] = 0; // wrist rotation
+    jointAngles[3] = 0;   // gripper rotation
 
     // attaching Arduino PINs and Servo Pins
     baseServo.attach(basePIN);
@@ -229,25 +212,27 @@ void loop()
     Serial.println("=> Square (type \"1\")");
     Serial.println("=> Arc (type \"2\")");
     Serial.println();
-    while (!Serial.available())
-    {
-    }
+    while (!Serial.available()) {}
     int path = Serial.parseInt();
 
-    switch (path)
-    {
-    case 0:
-        follow_line();
-        break;
-    default:
-        Serial.println("You did not choose a valid Path!");
-        Serial.println();
-        break;
+    switch (path) {
+        case 0:
+            follow_line();
+            break;
+        case 1:
+            draw_box();
+            break;
+        case 2:
+            draw_arc();
+            break;
+        default:
+            Serial.println("You did not choose a valid Path!");
+            Serial.println();
+            break;
     }
 }
 
-void follow_line()
-{
+void follow_line() {
     // set up start and end points
     float pointStart[3];
     float pointEnd[3];
@@ -261,9 +246,7 @@ void follow_line()
 
     // specify a step size for => needed as otherwise arm travels with curvature between points
     Serial.println("--- Please enter a number of steps (more == straighter line, 0 == direct path) ---");
-    while (!Serial.available())
-    {
-    }
+    while (!Serial.available()) {}
     stepSize = Serial.parseInt();
     Serial.print("Step Size: ");
     Serial.println(stepSize);
@@ -287,29 +270,86 @@ void follow_line()
     delay(500);
 }
 
-void record_point(float point[])
-{
-    while (!Serial.available())
-    {
-    }
+void record_point(float point[]) {
+    while (!Serial.available()) {}
     point[0] = Serial.parseFloat();
     Serial.print("x: ");
     Serial.println(point[0]);
     delay(100);
-    while (!Serial.available())
-    {
-    }
+    while (!Serial.available()) {}
     point[1] = Serial.parseFloat();
     Serial.print("y: ");
     Serial.println(point[1]);
     delay(100);
-    while (!Serial.available())
-    {
-    }
+    while (!Serial.available()) {}
     point[2] = Serial.parseFloat();
     Serial.print("z: ");
     Serial.println(point[2]);
     Serial.println();
+}
+
+void draw_box() {
+    // points to follow for a box
+    float pointOne[3] = {-5, 14, 6};
+    float pointTwo[3] = {5, 14, 6};
+    float pointThree[3] = {5, 9, 6};
+    float pointFour[3] = {-5, 9, 6};
+
+    // move to starting position and away command to draw box
+    move_toPos(pointOne);
+    delay(300);
+    
+    Serial.println("--- Type 1 to begin drawing square, 0 to cancel ---");
+    Serial.println();
+    while (!Serial.available()) {}
+    int choice = Serial.parseInt();
+
+    if (choice) {
+        move_toPos(pointTwo);
+        move_toPos(pointThree);
+        move_toPos(pointFour);
+        move_toPos(pointOne);
+        Serial.println("--- A square has been drawn! ---");
+        Serial.println();
+    } else {
+        return;
+    }
+}
+
+void draw_arc() {
+    // need to first determine the number of points in our arc we want
+    Serial.println("--- Please specify the number of points in your arc ---");
+    while (!Serial.available()) {}
+    int numPoints = Serial.parseInt();
+    Serial.print("Number of Arc Points: ");
+    Serial.println(numPoints);
+    Serial.println();
+    delay (100);
+
+    float points[numPoints][3];
+
+    // now need to record the required number of points
+    for (int i = 0; i < numPoints; i++) {
+        Serial.println("--- Please enter the x, y, z coords of Point " + String(i + 1) + "---");
+        record_point(points[i]);
+        delay(100);
+    }
+
+    Serial.println("--- Type 1 to begin drawing arc, 0 to cancel ---");
+    Serial.println();
+    while (!Serial.available()) {}
+    int choice = Serial.parseInt();
+
+    if (choice) {
+        // once have our points just need to move to each one
+        for (int i = 0; i < numPoints; i++) {
+            move_toPos(points[i]);
+        }
+        Serial.println("--- Your arc has been drawn! ---");
+        Serial.println();
+    } else {
+        return;
+    }   
 }
 
 /*
@@ -392,9 +432,8 @@ void calc_IK(float endEffectorPos[])
     float r3 = sqrt(sq(r1) + sq(r2));
 
     jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG;
-    jointAngles[1] = 180 - (atan2(r2, r1) + acos((sq(armLengths[1]) + sq(r1) + sq(r2) - sq(armLengths[2])) / (2 * armLengths[1] * r3))) * RAD_TO_DEG;
+    jointAngles[1] = 180 - (atan2(r2, r1) + acos((sq(armLengths[1]) + sq(r1) + sq(r2) - sq(armLengths[2]))/(2 * armLengths[1] * r3))) * RAD_TO_DEG;
     jointAngles[2] = -(90 - acos((sq(armLengths[1]) + sq(armLengths[2]) - sq(r1) - sq(r2)) / (2 * armLengths[1] * armLengths[2])) * RAD_TO_DEG);
 
-    if (jointAngles[2] + angleOffsets[2] > 180)
-        jointAngles[2] = 0;
+    if (jointAngles[2] + angleOffsets[2] > 180) jointAngles[2] = 0;
 }
