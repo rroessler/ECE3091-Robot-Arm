@@ -11,6 +11,7 @@ float endEffectorPos[3];
 
 // constant variables throughout the code
 const float armLengths[4] = {6, 8, 8, 6}; // setting constant robot arm lengths between joints
+const float angleOffsets[4] = {0, 0, 0, 30}; // angle offset constants for joint angle calculations
 
 // initialization of Arduino program
 void setup()
@@ -76,7 +77,7 @@ void calc_IK(float endEffectorPos[])
     float r2 = endEffectorPos[2] - armLengths[0];
     float r3 = sqrt(sq(r1) + sq(r2));
 
-    jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG;
-    jointAngles[1] = (atan2(r2, r1) - acos((sq(armLengths[2]) - sq(armLengths[1]) - sq(r3)) / (-2 * armLengths[1] * r3))) * RAD_TO_DEG;
-    jointAngles[2] = (M_PI - acos((sq(r3) - sq(armLengths[1]) - sq(armLengths[2])) / (-2 * armLengths[1] * armLengths[2]))) * RAD_TO_DEG;
+    jointAngles[0] = (atan2(endEffectorPos[1], endEffectorPos[0])) * RAD_TO_DEG + angleOffsets[0];
+    jointAngles[1] = (atan2(r2, r1) - acos((sq(armLengths[2]) - sq(armLengths[1]) - sq(r3)) / (-2 * armLengths[1] * r3))) * RAD_TO_DEG + angleOffsets[1];
+    jointAngles[2] = (M_PI - acos((sq(r3) - sq(armLengths[1]) - sq(armLengths[2])) / (-2 * armLengths[1] * armLengths[2]))) * RAD_TO_DEG + angleOffsets[2];
 }
