@@ -10,6 +10,20 @@ extern int currentState;
 // forward declaration to use functions where required
 
 void update_state();
+
 void initialise_robot();
+void goto_start_pos();
+
+void run_search_path();
+
+void start_pickup_routine();
+
+
+
+
+
+void handle_debug_input();
+void record_point(float point[]);
+
 
 #endif

@@ -5,7 +5,7 @@
 #include <Movement.h>
 
 // // setting up constants required for the routines
-// int defaultSpeed[4] = {30, 30, 30, 30};         // default speed for Servos (note cannot be declared const, but should NOT be changed)
+int defaultServoSpeed[4] = {20, 20, 20, 20}; // default speed for Servos (note cannot be declared const, but should NOT be changed)
 // const bool debug = true;                        // boolean for whether to print serial statements
 
 /*
@@ -19,7 +19,7 @@
 *   OUPUT:
 *       nil.
 */
-void change_servoPos(int servoSpeed[4], bool waitForFinish)
+void change_servoPos(int servoSpeed[4], bool defaultSpeed, bool waitForFinish)
 {
     // iterate over each global joint angle
     for (int i = 0; i < sizeof(jointAngles) / sizeof(jointAngles[0]); i++)
@@ -28,13 +28,13 @@ void change_servoPos(int servoSpeed[4], bool waitForFinish)
         switch (i)
         {
         case 0:
-            baseServo.write(jointAngles[i] + angleOffsets[0], servoSpeed[i]);
+            baseServo.write(jointAngles[i] + angleOffsets[0], defaultSpeed ? defaultServoSpeed[i] : servoSpeed[i]);
             break;
         case 1:
-            armServo.write(jointAngles[i] + angleOffsets[1], servoSpeed[i]);
+            armServo.write(jointAngles[i] + angleOffsets[1], defaultSpeed ? defaultServoSpeed[i] : servoSpeed[i]);
             break;
         case 2:
-            wristServo.write(jointAngles[i] + angleOffsets[2], servoSpeed[i]);
+            wristServo.write(jointAngles[i] + angleOffsets[2], defaultSpeed ? defaultServoSpeed[i] : servoSpeed[i]);
             break;
         case 3:
             gripperServo.write(jointAngles[i] + angleOffsets[3], servoSpeed[i]);
@@ -52,6 +52,21 @@ void change_servoPos(int servoSpeed[4], bool waitForFinish)
     }
 }
 
+void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed, bool waitForFinish)
+{
+    // redefine global gripper angle;
+    jointAngles[3] = angle;
+
+    // and write to servo
+    gripperServo.write(jointAngles[3] + angleOffsets[3], defaultSpeed ? defaultServoSpeed[4] : servoSpeed);
+
+    // and wait for servo to finish if desired
+    if (waitForFinish)
+    {
+        gripperServo.wait();
+    }
+}
+
 /*
 *   FUNCTION:
 *       Moves the arm to given array of angles. Does so by first updating the new position,
@@ -65,8 +80,13 @@ void change_servoPos(int servoSpeed[4], bool waitForFinish)
 *   OUTPUT:
 *       nil.
 */
-void move_toAngles(float nextAngles[], bool disp, int servoSpeed[4])
+void move_toAngles(float nextAngles[], int servoSpeed[4], bool defaultSpeed, bool waitForFinish, bool disp)
 {
+    jointAngles[0] = nextAngles[0];
+    jointAngles[1] = nextAngles[1];
+    jointAngles[2] = nextAngles[2];
+    jointAngles[3] = nextAngles[3];
+
     // determine next position
     if (disp)
         Serial.println("-- Calculating Next Position --");
@@ -77,7 +97,7 @@ void move_toAngles(float nextAngles[], bool disp, int servoSpeed[4])
     // and move to the next position with given speeds
     if (disp)
         Serial.println("-- Moving to Next Position --");
-    change_servoPos(servoSpeed);
+    change_servoPos(defaultSpeed ? defaultServoSpeed : servoSpeed, defaultSpeed, waitForFinish);
 
     // and print current angles
     if (disp)
@@ -98,7 +118,7 @@ void move_toAngles(float nextAngles[], bool disp, int servoSpeed[4])
 *   OUTPUT:
 *       nil.
 */
-void move_toPos(float nextPos[], bool waitForFinish, bool disp, int servoSpeed[4])
+void move_toPos(float nextPos[], int servoSpeed[4], bool defaultSpeed, bool waitForFinish, bool disp)
 {
     endEffectorPos[0] = nextPos[0];
     endEffectorPos[1] = nextPos[1];
@@ -114,7 +134,7 @@ void move_toPos(float nextPos[], bool waitForFinish, bool disp, int servoSpeed[4
     // and move to the next position with given speeds
     if (debug)
         Serial.println("-- Moving to Next Position --");
-    change_servoPos(servoSpeed, waitForFinish);
+    change_servoPos(defaultSpeed ? defaultServoSpeed : servoSpeed, defaultSpeed, waitForFinish);
 
     // and print current position
     if (debug)
@@ -140,7 +160,7 @@ void move_toPos_stepped(float startPos[], float endPos[], int stepSize)
     if (stepSize == 0)
     {
         // step size of zero implies go straight to end position
-        move_toPos(endPos);
+        move_toPos(endPos, defaultServoSpeed);
         return;
     }
 
@@ -167,6 +187,6 @@ void move_toPos_stepped(float startPos[], float endPos[], int stepSize)
         nextPoint[1] = startPos[1] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[1];
         nextPoint[2] = startPos[2] + (i + 1) * ((magnitude) / (stepSize + 1)) * dir[2];
 
-        move_toPos(nextPoint, false, true, servoSpeed);
+        move_toPos(nextPoint, servoSpeed, false);
     }
 }

@@ -4,8 +4,8 @@
 // #include <Kinematics.h>
 
 // setting constant variables need
-const float armLengths[4] = {6, 8, 8, 6};        // constant distances for robot arm sections
-const float angleOffsets[4] = {0, 0, 180, 30};   // constant angle offsets for servos if needed
+const float armLengths[4] = {6, 8, 8, 6};      // constant distances for robot arm sections
+const float angleOffsets[4] = {0, 0, 180, 0}; // constant angle offsets for servos if needed
 
 /*
 *   FUNCTION:
@@ -47,6 +47,8 @@ void print_currentAngles()
     Serial.println(jointAngles[1] + angleOffsets[1], 3);
     Serial.print("Wrist: ");
     Serial.println(jointAngles[2] + angleOffsets[2], 3);
+    Serial.print("Wrist: ");
+    Serial.println(jointAngles[3] + angleOffsets[3], 4);
 }
 
 /*
