@@ -21,14 +21,16 @@ void loop()
     {
     case 0:
         // Initialisation
+        initialise_colour_sensor();
         initialise_robot();
         break;
     case 1:
-        // Search for Blocks on Path
-        run_search_path();
+        // determine storage box location
+        code_change_state(2); // to force state whilst this is empty
         break;
     case 2:
-        // Found Block so Determine Size
+        // Search for Blocks on Path
+        run_search_path();
         break;
     case 3:
         // Pickup Block
@@ -36,12 +38,16 @@ void loop()
         break;
     case 4:
         // Move to Colour Sensor and Determine Colour
+        move_to_colour_sensor();
+        determine_block_colour();
         break;
     case 5:
         // Place in Storage
+        place_block_in_storage();
         break;
     case 6:
         // Return to Search
+        return_to_search();
         break;
     case 7:
         // Dropped Block (accident)
@@ -54,11 +60,16 @@ void loop()
         Serial.println("Yay!");
         break;
     case 10:
+        // Lost
+        Serial.println("LOST!");
+        break;
+    case 11:
         // Debug 1
         handle_debug_input();
         break;
-    case 11:
+    case 12:
         // Debug 2
+        manual_change_state();
         break;
     }
 

@@ -11,16 +11,25 @@ extern int currentState;
 
 void update_state();
 
+void initialise_colour_sensor();
 void initialise_robot();
-void goto_start_pos();
+void init_start_pos();
 
+void goto_rest_pos();
 void run_search_path();
 
 void start_pickup_routine();
 
+void move_to_colour_sensor();
+void determine_block_colour();
+
+void place_block_in_storage();
 
 
 
+
+void manual_change_state();
+void code_change_state(int stateNum);
 
 void handle_debug_input();
 void record_point(float point[]);

@@ -4,12 +4,12 @@
 #include <common.h>
 
 // setting up constants required for the routines
-// int defaultSpeed[4] = {30, 30, 30, 30};         // default speed for Servos (note cannot be declared const, but should NOT be changed)
-const extern bool debug;                        // grabbing global declaration of debug boolean
+const extern bool debug; // grabbing global declaration of debug boolean
 
 // forward declaration to use functions where required
 
 void change_servoPos(int servoSpeed[4], bool defaultSpeed = true, bool waitForFinish = true);
+void stop_servos();
 void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed = true, bool waitForFinish = true);
 
 void move_toAngles(float nextAngles[], int servoSpeed[4], bool defaultSpeed = true, bool waitForFinish = true, bool disp = debug);

@@ -9,4 +9,6 @@ void print_currentAngles();
 void calc_IK(float endEffectorPos[]);
 void calc_FK(float jointAngles[]);
 
+void set_angles_threshold();
+
 #endif

@@ -47,7 +47,7 @@ void print_currentAngles()
     Serial.println(jointAngles[1] + angleOffsets[1], 3);
     Serial.print("Wrist: ");
     Serial.println(jointAngles[2] + angleOffsets[2], 3);
-    Serial.print("Wrist: ");
+    Serial.print("Gripper: ");
     Serial.println(jointAngles[3] + angleOffsets[3], 4);
 }
 
@@ -94,4 +94,16 @@ void calc_IK(float endEffectorPos[])
 
     if (jointAngles[2] + angleOffsets[2] > 180)
         jointAngles[2] = 0;
+}
+
+void set_angles_threshold() {
+    for (int i = 0; i < 4; i++) {
+        if (jointAngles[i] > 180) {
+            jointAngles[i] = 180;
+        }
+
+        if (jointAngles[i] < 0) {
+            jointAngles[i] = 0;
+        }
+    }
 }

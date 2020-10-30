@@ -4,9 +4,8 @@
 
 #include <Movement.h>
 
-// // setting up constants required for the routines
+// setting up constants required for the routines
 int defaultServoSpeed[4] = {20, 20, 20, 20}; // default speed for Servos (note cannot be declared const, but should NOT be changed)
-// const bool debug = true;                        // boolean for whether to print serial statements
 
 /*
 *   FUNCTION:
@@ -50,6 +49,20 @@ void change_servoPos(int servoSpeed[4], bool defaultSpeed, bool waitForFinish)
         wristServo.wait();
         gripperServo.wait();
     }
+}
+
+void stop_servos() {
+    baseServo.stop();
+    armServo.stop();
+    wristServo.stop();
+    gripperServo.stop();
+
+    print_currentAngles();
+
+    // debug servo positions
+    jointAngles[0] = baseServo.read();
+
+    print_currentAngles();
 }
 
 void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed, bool waitForFinish)
