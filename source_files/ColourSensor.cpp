@@ -79,7 +79,7 @@ void check_colour(int type)
             break;
         default:
             colourArray[i] = avgRead;
-            float greyDiff = whiteArray[i] - black_array[i];
+            float greyDiff = whiteArray[i] - blackArray[i];
             colourArray[i] = (colourArray[i] - blackArray[i]) / (greyDiff)*255;
             break;
         }
@@ -98,7 +98,7 @@ int run_block_colour_multi_check(int times)
         int currentVal = determine_block_colour();
         if (currentVal != -1)
         {
-            counters[determine_block_colour] += 1;
+            counters[determine_block_colour()] += 1;
         }
 
         // delay(100);

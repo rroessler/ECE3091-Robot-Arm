@@ -2,7 +2,7 @@
 #define _COLOURSENSOR_H_
 
 // forward declaration to use functions where required
-void init_colour_pins();
+void init_colour_sensor_pins();
 
 void read_colour_sensor(int times);
 void set_start_balance();

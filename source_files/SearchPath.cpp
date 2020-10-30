@@ -2,16 +2,20 @@
 
 #include <SearchPath.h>
 
-static int maxSearchStates = 4;
+static int maxSearchStates = 1;
 
 void update_search_angle_base(bool side) {
-    if (jointAngles[0] == 180 - side ? 0 : 180) {
-        // based on side the angle was set at 0 or 180, thus change to 90
-        jointAngles[0] = 90;
-    } else {
-        // otherwise set to chosen side max
-        jointAngles[0] = side ? 180 : 0;
+    if (jointAngles[0] == 0) {
+        jointAngles[0] == 65;
+        return;
     }
+
+    if (jointAngles[0] == 180) {
+        jointAngles[0] = 115;
+        return;
+    }
+
+    jointAngles[0] = side ? 180 : 0;
 }
 
 int search_path_max_states() {

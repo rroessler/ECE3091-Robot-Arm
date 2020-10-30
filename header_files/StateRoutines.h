@@ -17,11 +17,12 @@ void init_start_pos();
 
 void goto_rest_pos();
 void run_search_path();
+void return_to_search();
 
 void start_pickup_routine();
 
 void move_to_colour_sensor();
-void determine_block_colour();
+void find_block_colour();
 
 void place_block_in_storage();
 

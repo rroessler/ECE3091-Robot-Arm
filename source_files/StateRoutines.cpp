@@ -53,7 +53,7 @@ void update_state()
 
 void initialise_colour_sensor() {
     // we first initialise the colour sensor pins, then get the sample white/black readings
-    init_colour_pins();
+    init_colour_sensor_pins();
     set_start_balance();
 
     delay(1000); // and quick delay before running full robot program
@@ -118,6 +118,7 @@ void goto_rest_pos() {
 
     calc_FK(jointAngles);
 
+    int speed[4] = {20, 20, 20, 20};
     move_toAngles(jointAngles, speed);
 }
 
@@ -130,7 +131,7 @@ void run_search_path()
     // this is best done through setting angles
 
     // we start by putting robot in start path position at given angles
-    float startPoint[4] = {180 - foundSide ? 0 : 180, 180, 0, 30};
+    float startPoint[4] = {foundSide ? 180.0 : 0.0, 180, 0, 30};
     move_toAngles(startPoint, searchSpeed); // we will wait for this to finish
 
     // now we just need to decrement to base position and move along the arc
@@ -212,7 +213,7 @@ void start_pickup_routine()
     // *** then move down z axis to suitable position
     // couple ways this could be done, could alter current end effector position
     // however most accurate will be to set a decline angle for arm and wrist servos
-    jointAngles[2] -= 15;
+    jointAngles[2] -= 17;
     calc_FK(jointAngles);
 
     int speed[4] = {20, 20, 20, 20};
@@ -224,25 +225,31 @@ void start_pickup_routine()
 
     //  start by taking an average proximity reading
     int proximityAverage = read_proximity_average(proximityPIN);
-    set_gripper_angle(45, 60, true); // now grip the block
+    set_gripper_angle(30, 60, true, false); // now grip the block
+    delay(500);
+
     jointAngles[2] += 15;
     move_toAngles(jointAngles, speed); // and move up slightly
 
     // now we check if we have a small or large block
-    if (detect_block_held(proximityPIN, proximityAverage, proximityThreshold) {
+    if (detect_block_held(proximityPIN, proximityAverage, proximityThreshold)) {
         // this means we haven't picked up the block so we know it is small
         blockSize = 0; // set block size variable
 
         // need to pick up again
         jointAngles[2] += 15;
         move_toAngles(jointAngles, speed);
+
+        delay(1000);
+
+        // *** close claw properly
+        set_gripper_angle(10, 60, true, false);
     } else {
         // otherwise we have found a large block
         blockSize = 1;
     }
 
-    // *** close claw properly
-    set_gripper_angle(15, 60, true);
+    delay(1000);
 
     // *** lift to set height
     jointAngles[1] = 90;
@@ -261,11 +268,15 @@ void move_to_colour_sensor() {
     int speed[4] = {20, 20, 20, 20};
 
     // move to the predetermined location of the colour sensor
+    jointAngles[0] = 95;
+    jointAngles[1] = 100;
+    jointAngles[2] = -55;
+    move_toAngles(jointAngles, speed);
 
     delay(2000);
 }
 
-void determine_block_colour() {
+void find_block_colour() {
     // run the block colour checker
     int colourFound = run_block_colour_multi_check(5);
 
@@ -279,6 +290,15 @@ void determine_block_colour() {
     // otherwise we have a found colour so we set the colour found
     blockColour = colourFound;
 
+    // now want to move to a higher position before placing in storage
+    int speed[4] = {20, 20, 20, 20};
+    jointAngles[0] = 90;
+    jointAngles[1] = 100;
+    jointAngles[2] = 0;
+    calc_FK(jointAngles);
+    move_toAngles(jointAngles, speed);
+    delay(500);
+
     // and continue to storage placement state
     nextState = 5;
 }
@@ -290,7 +310,7 @@ void place_block_in_storage() {
     delay(1000);
 
     // and go to desired routine depending on blocks found
-    blockFound += 1;
+    blocksFound += 1;
 
     if (blocksFound >= 6) {
         // finish

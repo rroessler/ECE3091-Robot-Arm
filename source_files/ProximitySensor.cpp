@@ -16,7 +16,7 @@ int read_proximity_average(int proximityPIN, int readCount) {
     return sum / readCount;
 }
 
-void detect_blocks(int proximityPIN, int currentCounter, int currentAverage, int threshold) {
+int detect_blocks(int proximityPIN, int currentCounter, int currentAverage, int threshold) {
     int val = read_proximity_sensor(proximityPIN);
 
     if (currentAverage - val >= threshold) {
@@ -30,6 +30,8 @@ void detect_blocks(int proximityPIN, int currentCounter, int currentAverage, int
 
 bool detect_block_held(int proximityPIN, int staticAverage, int threshold) {
     int val = read_proximity_average(proximityPIN) - staticAverage;
+
+    delay(500);
 
     if (abs(val) > threshold) {
         // since large difference then this must be a small block, as such not held
