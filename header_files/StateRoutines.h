@@ -15,8 +15,10 @@ void initialise_colour_sensor();
 void initialise_robot();
 void init_start_pos();
 
+void storage_search_path();
+
 void goto_rest_pos();
-void run_search_path();
+void blocks_search_path();
 void return_to_search();
 
 void start_pickup_routine();
@@ -34,6 +36,9 @@ void code_change_state(int stateNum);
 
 void handle_debug_input();
 void record_point(float point[]);
+
+void gripper_test();
+void storage_placement_test();
 
 
 #endif

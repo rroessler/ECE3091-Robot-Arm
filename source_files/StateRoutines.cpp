@@ -15,17 +15,18 @@ float endEffectorPos[3];
 
 // setting up constants required for the routines
 const float defaultAngles[4] = {90, 90, 0, 30}; // default angles for robot reset/init
-const bool debug = true;                       // boolean for whether to print serial statements
-const int grabSpeed = 50;                      // gripper speed for picking up, faster = more reliable in actually moving
-static int proximityThreshold = 20;            // threshold value for proximity sensor
-static bool foundSide = true;                  // found side of field for cubes
+const bool debug = true;                        // boolean for whether to print serial statements
+const int grabSpeed = 50;                       // gripper speed for picking up, faster = more reliable in actually moving
+static int proximityThreshold = 20;             // threshold value for proximity sensor
+static bool foundSide = true;                   // found side of field for cubes
 
 // initialise current state here
 int currentState = 0;
 int nextState = -1;
 
 // setting up PIN constants
-const int proximityPIN = 0;
+const int proximityPIN = 0;    // Analogue INPUT
+const int leverSwitchPIN = 12; // Digital INPUT
 
 const int basePIN = 6;
 const int armPIN = 7;
@@ -51,12 +52,16 @@ void update_state()
     }
 }
 
-void initialise_colour_sensor() {
+void initialise_colour_sensor()
+{
     // we first initialise the colour sensor pins, then get the sample white/black readings
     init_colour_sensor_pins();
     set_start_balance();
 
     delay(1000); // and quick delay before running full robot program
+
+    // and now set the next state
+    nextState = 1;
 }
 
 void initialise_robot()
@@ -72,8 +77,8 @@ void initialise_robot()
     // initialising the servos
     init_start_pos();
 
-    // and now set the next state
-    nextState = 1;
+    // initialize the block size lever switch as an INPUT
+    pinMode(leverSwitchPIN, INPUT);
 }
 
 void init_start_pos()
@@ -110,7 +115,8 @@ void init_start_pos()
     gripperServo.attach(gripperPIN);
 }
 
-void goto_rest_pos() {
+void goto_rest_pos()
+{
     jointAngles[0] = defaultAngles[0]; // base rotation
     jointAngles[1] = defaultAngles[1]; // arm rotation
     jointAngles[2] = defaultAngles[2]; // wrist rotation
@@ -122,7 +128,63 @@ void goto_rest_pos() {
     move_toAngles(jointAngles, speed);
 }
 
-void run_search_path()
+void storage_search_path()
+{
+    // we note a search speed that should be as slow as possible
+    int searchSpeed[4] = {3, 3, 3, 3};
+
+    // need to specify a starting position for storage box search and move to it
+    float startPoint[] = {0, 158, 0, 30};
+    move_toAngles(startPoint, searchSpeed);
+
+    // now we need to take an average proximity sensor reading
+    int proximityAverage = read_proximity_average(proximityPIN);
+    delay(1000);
+
+    // and move appropriately on base angle arc to find an edge of the storage box
+    jointAngles[0] = 180;
+    move_toAngles(jointAngles, searchSpeed, false, false);
+
+    // check whilst base servo is moving
+    int detectCounter = 0;
+    int readAngle = -1;
+    while (baseServo.isMoving())
+    {
+        detectCounter = detect_blocks(proximityPIN, detectCounter, proximityAverage, proximityThreshold);
+        delay(100);
+
+        if (detectCounter >= 4)
+        {
+            // got a valid hit of an edge so stop servos
+            stop_servos();
+            readAngle = baseServo.read(); // read the current base angle
+            break;                        // and break out of while loop
+        }
+    }
+
+    // determine side found!
+    if (readAngle <= 90)
+    {
+        // less than 90 implies right side
+        foundSide = true;
+        Serial.println("Storage Side Found: Right");
+    }
+    else
+    {
+        // greater than 90 implies left side
+        foundSide = false;
+        Serial.println("Storage Side Found: Left");
+    }
+    delay(1000);
+
+    // now we go to the rest position
+    goto_rest_pos();
+
+    // and now go to block searching mode
+    nextState = 2;
+}
+
+void blocks_search_path()
 {
     // we note a search speed that should be as slow as possible
     int searchSpeed[4] = {3, 3, 3, 3};
@@ -131,7 +193,7 @@ void run_search_path()
     // this is best done through setting angles
 
     // we start by putting robot in start path position at given angles
-    float startPoint[4] = {foundSide ? 180.0 : 0.0, 180, 0, 30};
+    float startPoint[4] = {foundSide ? 180.0 : 0.0, 141, -39, 30};
     move_toAngles(startPoint, searchSpeed); // we will wait for this to finish
 
     // now we just need to decrement to base position and move along the arc
@@ -141,8 +203,7 @@ void run_search_path()
     {
         // now we want to take an average proximity reading
         int proximityAverage = read_proximity_average(proximityPIN);
-
-        delay(1500);
+        delay(1000);
 
         // ping pong the base arc
         update_search_angle_base(foundSide);
@@ -207,48 +268,57 @@ void start_pickup_routine()
     // found block and hopefully positioned well enough to now pick up a block
 
     // *** start by opening claw
-    set_gripper_angle(90, 60, true);
-    delay(2000);
+    set_gripper_angle(80, 60, true);
+    delay(1500);
 
     // *** then move down z axis to suitable position
     // couple ways this could be done, could alter current end effector position
     // however most accurate will be to set a decline angle for arm and wrist servos
-    jointAngles[2] -= 17;
+    jointAngles[1] += 5;
+    jointAngles[2] -= 15;
+
+    if (jointAngles[1] > 180)
+    {
+        jointAngles[1] = 180;
+        jointAngles[2] -= 3;
+    }
     calc_FK(jointAngles);
 
     int speed[4] = {20, 20, 20, 20};
     move_toAngles(jointAngles, speed);
     delay(1000);
 
-    /* TEST BLOCK SIZE WITH CLAW ANGLE */
-    // to test block size we want to close to gripper angle that can hold the large block, but not the small
-
     //  start by taking an average proximity reading
     int proximityAverage = read_proximity_average(proximityPIN);
-    set_gripper_angle(30, 60, true, false); // now grip the block
-    delay(500);
+    set_gripper_angle(10, 30, false, false); // now grip the block
 
-    jointAngles[2] += 15;
-    move_toAngles(jointAngles, speed); // and move up slightly
-
-    // now we check if we have a small or large block
-    if (detect_block_held(proximityPIN, proximityAverage, proximityThreshold)) {
-        // this means we haven't picked up the block so we know it is small
-        blockSize = 0; // set block size variable
-
-        // need to pick up again
-        jointAngles[2] += 15;
-        move_toAngles(jointAngles, speed);
-
-        delay(1000);
-
-        // *** close claw properly
-        set_gripper_angle(10, 60, true, false);
-    } else {
-        // otherwise we have found a large block
-        blockSize = 1;
+    int leverHighVal = -1;
+    while (gripperServo.isMoving())
+    {
+        // whilst the gripper servo is moving we want to read when lever switch goes to high
+        if (digitalRead(leverSwitchPIN))
+        {
+            leverHighVal = gripperServo.read();
+            break;
+        }
     }
+    delay(2000);
+    gripperServo.detach();
 
+    // determine block size based on when the lever value went HIGH
+    blockSize = 1;
+    Serial.println();
+    Serial.println(leverHighVal);
+    if (leverHighVal < 25)
+    {
+        blockSize = 0;
+        Serial.println("The Block is SMALL!");
+    }
+    else
+    {
+        Serial.println("The Block is LARGE!");
+    }
+    Serial.println();
     delay(1000);
 
     // *** lift to set height
@@ -263,25 +333,30 @@ void start_pickup_routine()
     nextState = 4; // next state is move to and do colour test
 }
 
-void move_to_colour_sensor() {
+void move_to_colour_sensor()
+{
     // set a move speed
     int speed[4] = {20, 20, 20, 20};
 
     // move to the predetermined location of the colour sensor
-    jointAngles[0] = 95;
-    jointAngles[1] = 100;
-    jointAngles[2] = -55;
+    jointAngles[0] = 90;
+    jointAngles[1] = 90;
+    jointAngles[2] = -50;
     move_toAngles(jointAngles, speed);
 
     delay(2000);
 }
 
-void find_block_colour() {
+void find_block_colour()
+{
     // run the block colour checker
     int colourFound = run_block_colour_multi_check(5);
 
+    Serial.println("Colour Found: " + String(colourFound));
+
     // now we have a value, we first alert if not 0, 1, 2
-    if (colourFound == -1) {
+    if (colourFound == -1)
+    {
         // set as lost state
         nextState = 10;
         return;
@@ -293,7 +368,7 @@ void find_block_colour() {
     // now want to move to a higher position before placing in storage
     int speed[4] = {20, 20, 20, 20};
     jointAngles[0] = 90;
-    jointAngles[1] = 100;
+    jointAngles[1] = 70;
     jointAngles[2] = 0;
     calc_FK(jointAngles);
     move_toAngles(jointAngles, speed);
@@ -303,25 +378,86 @@ void find_block_colour() {
     nextState = 5;
 }
 
-void place_block_in_storage() {
+void place_block_in_storage()
+{
+    // determine block storage position
+    Serial.println();
+    Serial.println("Colour: " + String(blockColour) + ", Size: " + String(blockSize));
+    Serial.println();
+
+    // first choose arm and wrist position based on colour
+    switch (blockColour)
+    {
+    case 0:
+        // red
+        jointAngles[1] = 115;
+        jointAngles[2] = -30;
+        break;
+    case 1:
+        // green
+        jointAngles[1] = 135;
+        jointAngles[2] = -15;
+        break;
+    case 2:
+        // blue
+        jointAngles[1] = 165;
+        jointAngles[2] = 0;
+        break;
+    default:
+        // unknown
+        Serial.println("Error: Unknown Colour");
+        break;
+    }
+
+    // and now choose base arc angle based on side and size
+    jointAngles[0] = 90;
+    switch (blockSize)
+    {
+    case 0:
+        // small
+        jointAngles[0] += foundSide ? -15 : 15;
+        break;
+    case 1:
+        // large
+        jointAngles[0] += foundSide ? -25 : 25;
+        break;
+    default:
+        // unknown
+        Serial.println("Error: Unknown Size");
+        break;
+    }
+
+    print_currentAngles();
+
+    int speed[4] = {20, 20, 20, 20};
+    move_toAngles(jointAngles, speed);
+    delay(1000);
+
     // for testing right now we are just going to drop the block
     // and return back to the search routine
-    set_gripper_angle(90, 60, true);
+    gripperServo.attach(gripperPIN);
+    set_gripper_angle(75, 60, true);
     delay(1000);
 
     // and go to desired routine depending on blocks found
     blocksFound += 1;
+    blockColour = -1;
+    blockSize = -1;
 
-    if (blocksFound >= 6) {
+    if (blocksFound >= 6)
+    {
         // finish
         nextState = 9;
-    } else {
+    }
+    else
+    {
         // return to searching
         nextState = 6;
     }
 }
 
-void return_to_search() {
+void return_to_search()
+{
     // move to rest position before moving back to search routine
     goto_rest_pos();
     delay(1000);
@@ -406,4 +542,64 @@ void record_point(float point[])
     Serial.print("z: ");
     Serial.println(point[2]);
     Serial.println();
+}
+
+void gripper_test()
+{
+    Serial.println("--- Enter any values to test the grip ---");
+    while (!Serial.available())
+    {
+    }
+    Serial.read();
+
+    set_gripper_angle(100, 125, false);
+    delay(1000);
+
+    set_gripper_angle(0, 20, false, false);
+    while (gripperServo.isMoving())
+    {
+        if (digitalRead(leverSwitchPIN))
+        {
+            gripperServo.stop();
+            gripperServo.write(gripperServo.read());
+            break;
+        }
+    }
+    delay(1000);
+
+    Serial.println("Gripper Angle: " + String(gripperServo.read()));
+    delay(1000);
+
+    set_gripper_angle(100, 125, false);
+    delay(1000);
+
+    nextState = 13;
+}
+
+void storage_placement_test()
+{
+    foundSide = false;
+    int col[] = {0, 1, 2};
+    int s[] = {0, 1};
+
+    for (int x = 0; x < 3; x++)
+    {
+        for (int y = 0; y < 2; y++)
+        {
+            blockColour = col[x];
+            blockSize = s[y];
+
+            place_block_in_storage();
+
+            jointAngles[1] = 90;
+            jointAngles[2] = 0;
+            int speed[] = {40, 40, 40, 40};
+            move_toAngles(jointAngles, speed);
+
+            goto_rest_pos();
+            delay(1000);
+        }
+    }
+
+    nextState = 9;
 }

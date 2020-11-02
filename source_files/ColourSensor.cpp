@@ -4,8 +4,8 @@
 
 // define colour sensor pins and analogue input
 const int ledArray[] = {2, 3, 4};
-const int sensorPIN = 1;
 // { red, green, blue }
+const int sensorPIN = 1;
 
 // placeholders for colour detected
 int red = 0;

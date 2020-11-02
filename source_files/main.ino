@@ -12,25 +12,22 @@ void setup()
 
 void loop()
 {
-    Serial.println();
-    Serial.println("State: " + String(currentState));
-    Serial.println();
     // additional debug states to handle mixed states whilst testing things
     // don't forget to delete/change state changes from these on final version
     switch (currentState)
     {
     case 0:
         // Initialisation
-        initialise_colour_sensor();
         initialise_robot();
+        initialise_colour_sensor();
         break;
     case 1:
         // determine storage box location
-        code_change_state(2); // to force state whilst this is empty
+        storage_search_path();
         break;
     case 2:
         // Search for Blocks on Path
-        run_search_path();
+        blocks_search_path();
         break;
     case 3:
         // Pickup Block
@@ -57,7 +54,7 @@ void loop()
         break;
     case 9:
         // Finish
-        Serial.println("Yay!");
+        // Serial.println("Yay!");
         break;
     case 10:
         // Lost
@@ -73,6 +70,7 @@ void loop()
         break;
     case 13:
         // Debug 3
+        storage_placement_test();
         break;
     }
 

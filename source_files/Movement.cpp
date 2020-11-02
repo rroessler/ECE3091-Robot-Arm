@@ -57,12 +57,8 @@ void stop_servos() {
     wristServo.stop();
     gripperServo.stop();
 
-    print_currentAngles();
-
     // debug servo positions
     jointAngles[0] = baseServo.read();
-
-    print_currentAngles();
 }
 
 void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed, bool waitForFinish)
