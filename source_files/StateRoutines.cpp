@@ -61,7 +61,7 @@ void initialise_colour_sensor()
     delay(1000); // and quick delay before running full robot program
 
     // and now set the next state
-    nextState = 1;
+    nextState = 2;
 }
 
 void initialise_robot()
@@ -187,13 +187,14 @@ void storage_search_path()
 void blocks_search_path()
 {
     // we note a search speed that should be as slow as possible
-    int searchSpeed[4] = {3, 3, 3, 3};
+    // int searchSpeed[4] = {3, 3, 3, 3};
+    int searchSpeed[] = {30, 30, 30, 30};
 
     // for search path we need to start at a position and arc around the base.
     // this is best done through setting angles
 
     // we start by putting robot in start path position at given angles
-    float startPoint[4] = {foundSide ? 180.0 : 0.0, 141, -39, 30};
+    float startPoint[4] = {foundSide ? 180.0 : 0.0, 148, -48, 30};
     move_toAngles(startPoint, searchSpeed); // we will wait for this to finish
 
     // now we just need to decrement to base position and move along the arc

@@ -35,8 +35,8 @@ void loop()
         break;
     case 4:
         // Move to Colour Sensor and Determine Colour
-        move_to_colour_sensor();
-        find_block_colour();
+        // move_to_colour_sensor();
+        // find_block_colour();
         break;
     case 5:
         // Place in Storage
