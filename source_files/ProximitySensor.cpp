@@ -37,7 +37,7 @@ int read_proximity_average(int proximityPIN, int readCount)
     int sum = 0;
     for (int i = 0; i < readCount; i++)
     {
-        sum += read_proximity_sensor(proximityPIN);
+        sum += analogRead(proximityPIN);
         delay(10);
     }
 

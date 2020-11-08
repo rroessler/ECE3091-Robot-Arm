@@ -132,7 +132,7 @@ void check_colour(int type)
         default:
             colourArray[i] = avgRead;
             float greyDiff = whiteArray[i] - blackArray[i];
-            colourArray[i] = (colourArray[i] - blackArray[i]) / (greyDiff)*255;
+            colourArray[i] = (colourArray[i] - blackArray[i]) / (greyDiff) * 255;
             break;
         }
 
@@ -198,12 +198,6 @@ int determine_block_colour()
 {
     // update the colour sensor with new read colour data
     check_colour();
-
-    // debug
-    Serial.println("RED: " + String(colourArray[0]));
-    Serial.println("GREEN: " + String(colourArray[1]));
-    Serial.println("BLUE: " + String(colourArray[1]));
-    Serial.println();
 
     // if dominant red then must be red
     if (colourArray[0] > 100 && colourArray[1] < 80 && colourArray[2] < 80)
