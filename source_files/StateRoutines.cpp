@@ -1,6 +1,8 @@
+// arduino related includes
 #include <VarSpeedServo.h>
 #include <Arduino.h>
 
+// custom includes for Robot Arm
 #include <Movement.h>
 #include <Kinematics.h>
 #include <ProximitySensor.h>
@@ -8,6 +10,7 @@
 #include <ColourSensor.h>
 #include <common.h>
 
+// self declaration header
 #include <StateRoutines.h>
 
 float jointAngles[4];
