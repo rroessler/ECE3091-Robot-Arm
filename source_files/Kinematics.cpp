@@ -95,15 +95,3 @@ void calc_IK(float endEffectorPos[])
     if (jointAngles[2] + angleOffsets[2] > 180)
         jointAngles[2] = 0;
 }
-
-void set_angles_threshold() {
-    for (int i = 0; i < 4; i++) {
-        if (jointAngles[i] > 180) {
-            jointAngles[i] = 180;
-        }
-
-        if (jointAngles[i] < 0) {
-            jointAngles[i] = 0;
-        }
-    }
-}

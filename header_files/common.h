@@ -21,7 +21,4 @@ extern VarSpeedServo armServo;
 extern VarSpeedServo wristServo;
 extern VarSpeedServo gripperServo;
 
-// default speeds for servos as indexed
-// extern int defaultSpeed[4];// = {30, 30, 30, 30};
-
 #endif

@@ -8,7 +8,6 @@ extern float endEffectorPos[3];
 extern int currentState;
 
 // forward declaration to use functions where required
-
 void update_state();
 
 void initialise_colour_sensor();
@@ -30,7 +29,7 @@ void place_block_in_storage();
 
 
 
-
+// debug functions
 void manual_change_state();
 void code_change_state(int stateNum);
 

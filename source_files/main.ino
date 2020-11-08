@@ -14,6 +14,9 @@ void loop()
 {
     // additional debug states to handle mixed states whilst testing things
     // don't forget to delete/change state changes from these on final version
+
+    // overall state machine that takes in a currentState number and executes the required
+    // state functions
     switch (currentState)
     {
     case 0:
@@ -48,17 +51,19 @@ void loop()
         break;
     case 7:
         // Dropped Block (accident)
+        // --- unimplemented ---
         break;
     case 8:
-        // Reset
+        // --- unimplemented ---
         break;
     case 9:
         // Finish
-        // Serial.println("Yay!");
+        Serial.println("Yay!");
+        goto_rest_pos();
         break;
     case 10:
         // Lost
-        Serial.println("LOST!");
+        // --- unimplemented ---
         break;
     case 11:
         // Debug 1
@@ -74,8 +79,9 @@ void loop()
         break;
     }
 
+    // now we update the current state based on the given nextState number specified withina StateRoutines.h function
     update_state();
 
-    // slight delay whilst debugging
+    // slight delay before entering next state
     delay(1000);
 }

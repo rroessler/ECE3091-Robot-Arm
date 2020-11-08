@@ -7,6 +7,7 @@
 // setting up constants required for the routines
 int defaultServoSpeed[4] = {20, 20, 20, 20}; // default speed for Servos (note cannot be declared const, but should NOT be changed)
 
+
 /*
 *   FUNCTION:
 *       Moves the servos to current joint angles given by jointAngles[]. Does
@@ -51,6 +52,17 @@ void change_servoPos(int servoSpeed[4], bool defaultSpeed, bool waitForFinish)
     }
 }
 
+
+/*
+*   FUNCTION:
+*       Stops all the servos and saves the values that they were stopped on.
+*   
+*   INPUT:
+*       nil.
+*
+*   OUPUT:
+*       nil.
+*/
 void stop_servos() {
     baseServo.stop();
     armServo.stop();
@@ -59,8 +71,26 @@ void stop_servos() {
 
     // debug servo positions
     jointAngles[0] = baseServo.read();
+    jointAngles[1] = armServo.read();
+    jointAngles[2] = wristServo.read();
+    jointAngles[3] = gripperServo.read();
 }
 
+
+/*
+*   FUNCTION:
+*       Sets only the gripper based on an angle given. Does so by setting the angle and
+*       writing that angle to the servo.
+*   
+*   INPUT:
+*       float angle -> Angle for gripper servo to go to.
+*       int servoSpeed -> Speed value for the gripper
+*       bool defaultSpeed -> Boolean to decide whether to use a default speed or given speed
+*       bool waitForFinish -> Boolean to specify whether to wait for servo to finish moving
+*
+*   OUPUT:
+*       nil.
+*/
 void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed, bool waitForFinish)
 {
     // redefine global gripper angle;
@@ -83,8 +113,9 @@ void set_gripper_angle(float angle, int servoSpeed, bool defaultSpeed, bool wait
 *
 *   INPUT:
 *       float nextAngles[] -> angles to move servo to
-*       bool disp = debug -> boolean for display in serial monitor
 *       int servoSpeed[4] = defaultSpeed -> speed at which servos will move
+*       bool waitForFinish = true -> boolean to wait for servos to finish moving
+*       bool disp = debug -> boolean for display in serial monitor
 *
 *   OUTPUT:
 *       nil.
